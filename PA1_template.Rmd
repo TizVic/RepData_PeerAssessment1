@@ -8,12 +8,13 @@ keep_md: true
 
 ## Loading and preprocessing the data
 
-Load data and create the dataframes used along the document:
+Load data and create the dataframes used along the document. The only transformation is a cast to *Date* type for column *date*: 
 
 ```{r carica_dati}
-knitr::opts_chunk$set(fig.path = "figure/")
+knitr::opts_chunk$set(fig.path = "figure/") # save directory for plots
+
 activity = read.csv("activity.csv")
-activity$date <- as.Date(activity$date)
+activity$date <- as.Date(activity$date) # cast to Date
 
 stepsPerDay = with(activity[!is.na(activity$steps), ], aggregate(steps, list(date), sum))
 names(stepsPerDay) <- c("date", "steps.per.day")
@@ -31,7 +32,7 @@ names(meanStepsPerInterval) <- c("interval", "mean.per.day")
 
 **stepsPerDay** sum of all steps in the day per day. NA values are omitted
 
-**stepsPerInterval**: mean of steps of all days per time interval NA values are omitted
+**stepsPerInterval**/**meanStepsPerInterval**: mean of steps of all days per time interval NA values are omitted
 
 **meanStepsPerInterval**: mean of steps of all days per time interval NA values are omitted
 
@@ -48,30 +49,44 @@ Mean of steps per day: **`r sprintf("%.2f",mn)`**
 Median of steps per day: **`r sprintf("%.2f", mdn)`**
 
 # plot histogram of total number steps per day
+Using the *stepsPerDay* defined above we can plot total number steps per day
+
 ```{r hist_noNA}
 
 hist(stepsPerDay$steps.per.day, breaks = 20, col = "yellow", xlab = "", main = "Total number of steps taken each day (NA excluded)")
+
 ```
 
 
 
 ## What is the average daily activity pattern?
+
 We can plot the average steps per interval:
+
 ```{r average_steps_per_day}
 with(stepsPerInterval, plot(interval, mean.steps, type = "l", xlab = "Time interval (5 min)", ylab = "Average steps per day", main = "Average steps taken per day @5 minutes intervals"))
+
+# calculate the maximun number of steps in the interval
 maxstepsidx <- which.max(stepsPerInterval$mean.steps)
 maxsteps <- stepsPerInterval$mean.steps[maxstepsidx]
+
 ```
 and calculate the maximun number of steps in the interval: **`r sprintf("%.2f", maxsteps)`**
 
 ## Imputing missing values
-We can impute the NA using mean values in the 5-minutes interval for all days. 
-We calculate the number of rows with **NA** values:
-
-```{r average_withNA}
+First we calculate the number of missing values (NA):
+```{r total_number_NA}
 
 # Number of rows with NA
 totna <- with(activity, sum(is.na(steps)))
+
+```
+Number of rows with **NA**: `r totna`
+
+Then we can impute the NA in a given interval using the mean value for that 5-minutes interval  calculate across all days. 
+
+```{r average_withNA}
+
 # Create a new dataset that is equal to the original dataset but with the missing data filled in
 mact <- merge(activity, meanStepsPerInterval, by = "interval")
 mact[is.na(mact$steps), 2] <- mact[is.na(mact$steps), 4]
@@ -82,17 +97,20 @@ names(newStepsPerDay) <- c("date", "steps.per.day")
 mynastat <- summary(newStepsPerDay$steps.per.day)
 mdnna <- mynastat["Median"]
 mnna <- mynastat["Mean"]
+```
+Mean of steps per day (NAs imputed): **`r sprintf("%.2f", mnna)`** - $Mean_{NAimputed} - Mean_{NAexcluded} =  `r mnna - mn`$
+
+Median of steps per day (NAs imputed): **`r sprintf("%.2f", mdnna)`** - $Median_{NAimputed} - Median_{NAexcluded} =  `r mdnna - mdn`$
+
+Finally we can plot the same histogram as above but with NA imputed
+```{r hist_withNA}
 
 # same histogram as above but with new dataset
 hist(newStepsPerDay$steps.per.day, 20, col = "yellow", xlab = "", main = "Total number of steps taken each day (NA imputed)")
 
 ```
 
-Number of rows with **NA**: `r totna`
 
-Mean of steps per day (NAs imputed): **`r sprintf("%.2f", mnna)`** - $Mean_{NAimputed} - Mean_{NAexcluded} =  `r mnna - mn`$
-
-Median of steps per day (NAs imputed): **`r sprintf("%.2f", mdnna)`** - $Median_{NAimputed} - Median_{NAexcluded} =  `r mdnna - mdn`$
 
 With NA imputed using mean values in the 5-minutes interval across all days Median increased compared to that with NA excluded.  
 
@@ -105,11 +123,15 @@ To check differences in activity patterns between weekdays and weekends we can c
 # Set locale to "English". Only for NON English LOCALE
 loc <- Sys.setlocale("LC_ALL", "en_US.UTF-8") # Linux
 #loc <- Sys.setlocale("LC_ALL", "English") # Windows
+
 # create dataset 
 ac1 = mact[ , -c(4)]
 ac1$wd <- weekdays(mact$date)
+
+# prepare data for factor variable: 1 = weekday, 2 = weekend
 ac1[ac1$wd %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),4] <- 1
 ac1[ac1$wd %in% c("Saturday", "Sunday"),4] <- 2
+
 # create new factor variable WeekDay/WeekEnd
 ac1$wk <- factor(ac1$wd, levels = c(1,2), labels = c("WeekDay", "WeekEnd"))
 
