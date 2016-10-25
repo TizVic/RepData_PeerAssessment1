@@ -70,9 +70,10 @@ with(stepsPerInterval, plot(interval, mean.steps, type = "l", xlab = "Time inter
 ```r
 # calculate the maximun number of steps in the interval
 maxstepsidx <- which.max(stepsPerInterval$mean.steps)
+maxinterval <- stepsPerInterval$interval[maxstepsidx]
 maxsteps <- stepsPerInterval$mean.steps[maxstepsidx]
 ```
-and calculate the maximun number of steps in the interval: **206.17**
+and calculate the maximun number of steps **206.17** in the interval **835** 
 
 ## Imputing missing values
 First we calculate the number of missing values (NA):
@@ -123,8 +124,8 @@ To check differences in activity patterns between weekdays and weekends we can c
 
 ```r
 # Set locale to "English". Only for NON English LOCALE
-#loc <- Sys.setlocale("LC_ALL", "en_US.UTF-8") # Linux
-loc <- Sys.setlocale("LC_ALL", "English") # Windows
+loc <- Sys.setlocale("LC_ALL", "en_US.UTF-8") # Linux
+#loc <- Sys.setlocale("LC_ALL", "English") # Windows
 
 # create dataset 
 ac1 = mact[ , -c(4)]
